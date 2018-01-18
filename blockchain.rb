@@ -59,4 +59,20 @@ class Blockchain
     @chain[-1]
   end
 
+  def proof_of_work(last_proof)
+    # Simple Proof of Work Algorithm:
+    # Find a number p' such that hash(pp') contains leading 4 zeroes, where p is the previous p'
+    # p is the previous proof, and p' is the new proof
+    proof = -1
+    proof += 1 until valid_proof(last_proof, proof)
+    proof
+  end
+
+  def valid_proof(last_proof, proof)
+    # Validates the Proof: Does hash(last_proof, proof) contain 4 leading zeroes?
+    guess = "#{last_proof}#{proof}"
+    guess_hash = Digest::SHA256.hexdigest(guess)
+    guess_hash[-4..-1] == "0000"
+  end
+
 end
