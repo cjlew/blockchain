@@ -1,7 +1,6 @@
 require './blockchain'
 require 'sinatra'
 require 'json'
-require './json_ext'
 require 'securerandom'
 
 
@@ -10,7 +9,29 @@ blockchain = Blockchain.new
 node_identifier = SecureRandom.uuid.gsub('-', '')
 
 get '/mine' do
-  return "We'll mine a new Block"
+  # We run the proof of work algorithm to get the next proof...
+  last_block = blockchain.last_block
+  last_proof = last_block[:proof]
+  proof = blockchain.proof_of_work(last_proof)
+
+  # We must receive a reward for finding the proof.
+  # The sender is "0" to signify that this node has mined a new coin.
+  blockchain.new_transaction("0", node_identifier, 1)
+
+  # Forge the new Block by adding it to the chain
+  previous_hash = blockchain.hash(last_block)
+  block = blockchain.new_block(proof, previous_hash)
+
+  response = {
+        message: "New Block Forged",
+        index: block[:index],
+        transactions: block[:transactions],
+        proof: block[:proof],
+        previous_hash: block[:previous_hash]
+    }
+
+  status 200
+  body response.to_json
 end
 
 post '/transactions/new' do
@@ -34,10 +55,11 @@ post '/transactions/new' do
 end
 
 get '/chain' do
-  response = {
-        chain: blockchain.chain,
-        length: len(blockchain.chain),
+    response = {
+        :chain => blockchain.chain,
+        :length => blockchain.chain.size
     }
-  status 200
-  body response.to_json
+
+    status 200
+    body response.to_json
 end
